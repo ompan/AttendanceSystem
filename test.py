@@ -6,11 +6,16 @@ import threading
 from deepface import DeepFace
 import matplotlib.pyplot as plt
 import cv2  # Import OpenCV
+import torch
+
+# Check for GPU availability
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Running on: {device}")
 
 # Folders containing images
-known_faces_folder = r'C:\Users\vidit\OneDrive - Manipal University Jaipur\Data\Known_faces'  # Path for known faces
-augmented_data_folder = r'C:\Users\vidit\OneDrive - Manipal University Jaipur\Data\Augmented Data'  # Path for augmented images
-resized_data_folder = r'C:\Users\vidit\OneDrive - Manipal University Jaipur\Data\Resized'  # Path for resized images
+known_faces_folder = r'C:\Users\vidit\OneDrive - Manipal University Jaipur\Data\Known_faces'
+augmented_data_folder = r'C:\Users\vidit\OneDrive - Manipal University Jaipur\Data\Augmented Data'
+resized_data_folder = r'C:\Users\vidit\OneDrive - Manipal University Jaipur\Data\Resized'
 
 # Load known faces and their corresponding names
 known_faces = {}
@@ -34,8 +39,6 @@ def train_model():
                     training_data.append(img_path)
                     training_labels.append(name)
     
-    # Here you would typically create a training dataset for the model
-    # For demonstration, we'll just print out the loaded data
     print(f"Training with {len(training_data)} images.")
     
     return training_data, training_labels
@@ -47,7 +50,6 @@ def recognize_faces(uploaded_image_paths, display_label, trained_data):
     for uploaded_image_path in uploaded_image_paths:
         try:
             print(f"Recognizing faces in {uploaded_image_path}")
-            # Read the uploaded image
             image = cv2.imread(uploaded_image_path)
 
             # Extract faces from the uploaded image
@@ -55,7 +57,6 @@ def recognize_faces(uploaded_image_paths, display_label, trained_data):
 
             recognized_names = []
             for face_info in faces:
-                # Get facial_area coordinates
                 if 'facial_area' in face_info:
                     facial_area = face_info['facial_area']
                     x = facial_area['x']
@@ -63,24 +64,21 @@ def recognize_faces(uploaded_image_paths, display_label, trained_data):
                     w = facial_area['w']
                     h = facial_area['h']
                     
-                    # Compare with known faces
                     matched_name = None
                     for name, known_face_path in known_faces.items():
-                        result = DeepFace.verify(face_info['face'], known_face_path, enforce_detection=False)
+                        result = DeepFace.verify(face_info['face'], known_face_path, enforce_detection=False, model_name='Facenet', detector_backend='mtcnn')
                         if result['verified']:
                             matched_name = name
                             break  # Stop checking once a match is found
                     
-                    # Draw rectangle and put name on the image
                     if matched_name:
                         recognized_names.append(matched_name)
                         # Draw rectangle for recognized face
                         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)  # Green box for recognized
-                        cv2.putText(image, matched_name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                        cv2.putText(image, matched_name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)  # 1x font size for name
                     else:
-                        # Draw rectangle for unknown face
                         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)  # Red box for unknown
-                        cv2.putText(image, "Unknown", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                        cv2.putText(image, "Unknown", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)  # 1x font size for "Unknown"
                 else:
                     print("Facial area not detected for the face.")
 
@@ -99,7 +97,6 @@ def recognize_faces(uploaded_image_paths, display_label, trained_data):
             print(f"Error processing {uploaded_image_path}: {e}")
             results.append(f"Error processing {uploaded_image_path}: {str(e)}")
     
-    # Display results in the label
     display_results(results, display_label)
 
 # Display results in the label

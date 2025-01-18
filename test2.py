@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import layers, models # type: ignore
+from tensorflow.keras import layers, models  # type: ignore
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 import matplotlib.pyplot as plt
@@ -58,6 +58,9 @@ images = images / 255.0
 label_binarizer = LabelBinarizer()
 labels_encoded = label_binarizer.fit_transform(labels)
 
+# Save the class names to a .npy file for future use
+np.save('classes.npy', label_binarizer.classes_)
+
 # Split data into training and validation sets
 X_train, X_val, y_train, y_val = train_test_split(images, labels_encoded, test_size=0.2, random_state=42)
 
@@ -102,7 +105,7 @@ plt.ylabel('Accuracy')
 plt.legend(loc='lower right')
 plt.show()
 
-# Function to predict with unknown face handling
+# Step 6: Function to predict with unknown face handling
 def predict_with_unknown(image):
     preprocessed_image = tf.keras.preprocessing.image.img_to_array(image) / 255.0  # Ensure normalization
     preprocessed_image = np.expand_dims(preprocessed_image, axis=0)  # Add batch dimension
@@ -110,13 +113,16 @@ def predict_with_unknown(image):
     prediction = model.predict(preprocessed_image)
     predicted_index = np.argmax(prediction, axis=1)[0]
 
-    # Check if predicted index is within the bounds
-    if predicted_index >= len(label_binarizer.classes_):
+    # Load class labels (student names)
+    classes = np.load('classes.npy', allow_pickle=True)
+
+    # Check if predicted index is within bounds
+    if predicted_index >= len(classes):
         return "Unknown"  # Handle unknown face
 
-    return label_binarizer.classes_[predicted_index]  # Return the predicted student's name
+    return classes[predicted_index]  # Return the predicted student's name
 
-# Safely print any Unicode messages
+# Step 7: Safely print any Unicode messages
 def print_safe(message):
     try:
         print(message)

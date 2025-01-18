@@ -1,6 +1,7 @@
 import os
-from PIL import Image
-from concurrent.futures import ThreadPoolExecutor
+from PIL import Image, ImageOps, ImageFilter
+from concurrent.futures import ProcessPoolExecutor
+import numpy as np
 
 # Path to the Known Faces folder
 known_faces_folder = os.path.expanduser(r'C:\Users\vidit\OneDrive - Manipal University Jaipur\Data\Known_faces')
@@ -9,11 +10,24 @@ known_faces_folder = os.path.expanduser(r'C:\Users\vidit\OneDrive - Manipal Univ
 resized_folder = os.path.join(os.path.dirname(known_faces_folder), 'Resized')
 os.makedirs(resized_folder, exist_ok=True)
 
-# Function to resize a single image
-def resize_image(file_name):
+# Function to preprocess a single image
+def preprocess_image(file_name):
     try:
         file_path = os.path.join(known_faces_folder, file_name)
         with Image.open(file_path) as img:
+            # Convert to grayscale
+            img = ImageOps.grayscale(img)
+            
+            # Apply histogram equalization
+            img = ImageOps.equalize(img)
+            
+            # Normalize pixel values
+            img_array = np.array(img) / 255.0
+            img = Image.fromarray((img_array * 255).astype(np.uint8))
+            
+            # Apply Gaussian blur
+            img = img.filter(ImageFilter.GaussianBlur(1))
+            
             # Resize to 224x224 pixels using LANCZOS filter for high-quality downscaling
             img_resized = img.resize((224, 224), Image.LANCZOS)
             img_resized.save(os.path.join(resized_folder, file_name))
@@ -23,8 +37,8 @@ def resize_image(file_name):
 # Get the list of image files
 image_files = [file_name for file_name in os.listdir(known_faces_folder) if file_name.lower().endswith(('jpg', 'jpeg', 'png'))]
 
-# Use ThreadPoolExecutor to process images in parallel
-with ThreadPoolExecutor() as executor:
-    executor.map(resize_image, image_files)
+# Use ProcessPoolExecutor to process images in parallel
+with ProcessPoolExecutor() as executor:
+    executor.map(preprocess_image, image_files)
 
-print("Image resizing completed! Check the 'Resized' folder in the same directory as the Known Faces folder.")
+print("Image preprocessing and resizing completed! Check the 'Resized' folder in the same directory as the Known Faces folder.")

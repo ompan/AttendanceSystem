@@ -39,7 +39,6 @@ class FaceRecognitionApp:
 
         self.image_label = tk.Label(root)
         self.image_label.pack()
-
         self.upload_button = tk.Button(root, text="Upload Image", command=self.upload_image)
         self.upload_button.pack()
 

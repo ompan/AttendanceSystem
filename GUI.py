@@ -8,10 +8,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import cv2
 
-# Suppress TensorFlow logs
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-# Load your model
 model = tf.keras.models.load_model(r'C:\Work\Python\AttendanceSystem\custom_face_recognition_model.h5')
 
 # Load your label binarizer classes (update with your actual classes)
